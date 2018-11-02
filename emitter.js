@@ -57,9 +57,9 @@ function getEmitter() {
         off: function (event, context) {
 
             const eventsToUnsubscribeFrom = [];
+            const eventRegex = new RegExp('^' + event.replace('.', '\\.') + '(.|$)');
             for (let currentEvent of subscriptions.keys()) {
-                const regex = new RegExp('^' + event + '(.|$)');
-                if (regex.test(currentEvent)) {
+                if (eventRegex.test(currentEvent)) {
                     eventsToUnsubscribeFrom.push(currentEvent);
                 }
             }
