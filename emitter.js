@@ -12,7 +12,7 @@ const isStar = false;
  */
 function getEmitter() {
 
-    const subscriptions = [];
+    let subscriptions = [];
 
     function isSuperevent(superevent, event) {
         return event.indexOf(superevent) === 0 &&
@@ -47,9 +47,9 @@ function getEmitter() {
          */
         off: function (event, context) {
 
-            subscriptions.filter((subscription) => {
-                return subscription.context === context &&
-                    isSuperevent(event, subscription.event);
+            subscriptions = subscriptions.filter((subscription) => {
+                return subscription.context !== context ||
+                    !isSuperevent(event, subscription.event);
             });
 
             return this;
@@ -64,6 +64,10 @@ function getEmitter() {
 
             const suitableSubscriptions = subscriptions.filter((subscription) => {
                 return isSuperevent(subscription.event, event);
+            });
+
+            suitableSubscriptions.sort((a, b) => {
+                return a.event.split('.').length < b.event.split('.').length;
             });
 
             for (let subscription of suitableSubscriptions) {
