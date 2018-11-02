@@ -12,15 +12,11 @@ const isStar = false;
  */
 function getEmitter() {
 
-    const subscriptions = new Map();
+    const subscriptions = [];
 
-    function emitForEvent(event) {
-        const currentEventSubscriptions = subscriptions.get(event);
-        if (currentEventSubscriptions !== undefined) {
-            for (let subscription of currentEventSubscriptions) {
-                subscription.handler.call(subscription.context);
-            }
-        }
+    function isSuperevent(superevent, event) {
+        return event.indexOf(superevent) === 0 &&
+            (event.length === superevent.length || event[superevent.length] === '.');
     }
 
     return {
@@ -34,13 +30,8 @@ function getEmitter() {
          */
         on: function (event, context, handler) {
 
-            let currentEventSubscriptions = subscriptions.get(event);
-            if (currentEventSubscriptions === undefined) {
-                currentEventSubscriptions = [];
-                subscriptions.set(event, currentEventSubscriptions);
-            }
-
-            currentEventSubscriptions.push({
+            subscriptions.push({
+                event,
                 context,
                 handler
             });
@@ -56,21 +47,10 @@ function getEmitter() {
          */
         off: function (event, context) {
 
-            const eventsToUnsubscribeFrom = [];
-            for (let currentEvent of subscriptions.keys()) {
-                if (currentEvent.indexOf(event) === 0 && (currentEvent.length <= event.length ||
-                    currentEvent[event.length] === '.')) {
-                    eventsToUnsubscribeFrom.push(currentEvent);
-                }
-            }
-
-            for (let currentEvent of eventsToUnsubscribeFrom) {
-                const currentEventSubscriptions = subscriptions.get(currentEvent);
-                subscriptions.delete(currentEvent);
-                subscriptions.set(currentEvent, currentEventSubscriptions.filter((subscription) => {
-                    return subscription.context !== context;
-                }));
-            }
+            subscriptions.filter((subscription) => {
+                return subscription.context === context &&
+                    isSuperevent(event, subscription.event);
+            });
 
             return this;
         },
@@ -82,11 +62,12 @@ function getEmitter() {
          */
         emit: function (event) {
 
-            let currentEvent = event;
-            emitForEvent(currentEvent);
-            while (currentEvent.indexOf('.') !== -1) {
-                currentEvent = currentEvent.substring(0, currentEvent.indexOf('.'));
-                emitForEvent(currentEvent);
+            const suitableSubscriptions = subscriptions.filter((subscription) => {
+                return isSuperevent(subscription.event, event);
+            });
+
+            for (let subscription of suitableSubscriptions) {
+                subscription.handler.call(subscription.context);
             }
 
             return this;
