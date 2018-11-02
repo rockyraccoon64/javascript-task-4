@@ -66,6 +66,7 @@ function getEmitter() {
 
             for (let currentEvent of eventsToUnsubscribeFrom) {
                 const currentEventSubscriptions = subscriptions.get(currentEvent);
+                subscriptions.delete(currentEvent);
                 subscriptions.set(currentEvent, currentEventSubscriptions.filter((subscription) => {
                     return subscription.context !== context;
                 }));
